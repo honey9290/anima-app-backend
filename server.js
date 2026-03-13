@@ -9,7 +9,20 @@ const User = require("./models/User");
 const app = express();
 
 // ── Middleware ────────────────────────────────────────────────────────────────
-app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:3000" }));
+app.use(cors({
+  origin: function (origin, callback) {
+    const allowed = [
+      process.env.FRONTEND_URL,
+      "http://localhost:3000"
+    ].filter(Boolean);
+    if (!origin || allowed.some(u => origin.startsWith(u.replace(/\/$/, '')))) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}));
 app.use(express.json());
 
 // ── Connect to MongoDB ────────────────────────────────────────────────────────
@@ -20,30 +33,30 @@ mongoose
 
 // ── Animal Names Pool (200 unique animals) ───────────────────────────────────
 const ANIMALS = [
-  "Aardvark","Albatross","Alligator","Alpaca","Axolotl","Baboon","Badger","Barracuda","Bat","Bear",
-  "Beaver","Bison","Boa","Buffalo","Bullfrog","Camel","Capybara","Caracal","Cassowary","Cheetah",
-  "Chinchilla","Chipmunk","Cobra","Condor","Coyote","Crane","Crocodile","Dingo","Dolphin","Donkey",
-  "Dung Beetle","Eagle","Echidna","Elephant","Emu","Falcon","Ferret","Flamingo","Fox","Gazelle",
-  "Gecko","Giraffe","Gnu","Gorilla","Groundhog","Hammerhead","Hamster","Hedgehog","Hippopotamus",
-  "Hornbill","Hyena","Ibis","Iguana","Impala","Jackal","Jaguar","Jellyfish","Kangaroo","Kiwi",
-  "Koala","Komodo Dragon","Kookaburra","Lemur","Leopard","Llama","Lobster","Lynx","Manatee",
-  "Mandrill","Mantis","Meerkat","Mongoose","Monitor Lizard","Moose","Narwhal","Newt","Numbat",
-  "Ocelot","Octopus","Okapi","Opossum","Orangutan","Oryx","Ostrich","Otter","Owl","Pangolin",
-  "Parrot","Peacock","Pelican","Penguin","Pika","Piranha","Platypus","Polar Bear","Porcupine",
-  "Prairie Dog","Puffin","Quokka","Quoll","Rabbit","Raccoon","Raven","Red Panda","Rhino","Roadrunner",
-  "Salamander","Seahorse","Serval","Skunk","Sloth","Snow Leopard","Snowy Owl","Sparrowhawk","Squid",
-  "Squirrel","Stingray","Stoat","Sun Bear","Tapir","Tasmanian Devil","Toucan","Tuna","Turkey",
-  "Turtle","Uakari","Uguisu","Umbrellabird","Vampire Bat","Vicuna","Viper","Wallaby","Walrus",
-  "Warthog","Weasel","Wolf","Wolverine","Wombat","Woodpecker","Yak","Zebra","Zebu","Zorilla",
-  "Blue Jay","Bull Shark","Catfish","Chinstrap Penguin","Clown Fish","Coconut Crab","Colobus",
-  "Dhole","Diamondback","Dragonfly","Dung Beetle","Electric Eel","Fiddler Crab","Fire Ant",
-  "Flying Fox","Fossa","Frilled Lizard","Giant Otter","Gila Monster","Glass Frog","Golden Eagle",
-  "Goliath Beetle","Grizzly Bear","Harp Seal","Harpy Eagle","Horseshoe Crab","Hummingbird",
-  "King Cobra","Kinkajou","Liger","Long-Tailed Tit","Macaw","Manta Ray","Margay","Markhor",
-  "Moon Bear","Mudskipper","Musk Ox","Naked Mole Rat","Night Heron","Nile Crocodile","Nilgai",
-  "Oarfish","Olm","Onager","Orinoco Crocodile","Painted Dog","Patas Monkey","Patagonian Mara",
-  "Proboscis Monkey","Pronghorn","Pygmy Hippo","Quetzal","Rainbow Lorikeet","Red Kite","Roughy",
-  "Ruffed Lemur","Rusty Spotted Cat","Sand Cat","Saola","Scarlet Macaw","Secretary Bird","Shoebill",
+  "Aardvark", "Albatross", "Alligator", "Alpaca", "Axolotl", "Baboon", "Badger", "Barracuda", "Bat", "Bear",
+  "Beaver", "Bison", "Boa", "Buffalo", "Bullfrog", "Camel", "Capybara", "Caracal", "Cassowary", "Cheetah",
+  "Chinchilla", "Chipmunk", "Cobra", "Condor", "Coyote", "Crane", "Crocodile", "Dingo", "Dolphin", "Donkey",
+  "Dung Beetle", "Eagle", "Echidna", "Elephant", "Emu", "Falcon", "Ferret", "Flamingo", "Fox", "Gazelle",
+  "Gecko", "Giraffe", "Gnu", "Gorilla", "Groundhog", "Hammerhead", "Hamster", "Hedgehog", "Hippopotamus",
+  "Hornbill", "Hyena", "Ibis", "Iguana", "Impala", "Jackal", "Jaguar", "Jellyfish", "Kangaroo", "Kiwi",
+  "Koala", "Komodo Dragon", "Kookaburra", "Lemur", "Leopard", "Llama", "Lobster", "Lynx", "Manatee",
+  "Mandrill", "Mantis", "Meerkat", "Mongoose", "Monitor Lizard", "Moose", "Narwhal", "Newt", "Numbat",
+  "Ocelot", "Octopus", "Okapi", "Opossum", "Orangutan", "Oryx", "Ostrich", "Otter", "Owl", "Pangolin",
+  "Parrot", "Peacock", "Pelican", "Penguin", "Pika", "Piranha", "Platypus", "Polar Bear", "Porcupine",
+  "Prairie Dog", "Puffin", "Quokka", "Quoll", "Rabbit", "Raccoon", "Raven", "Red Panda", "Rhino", "Roadrunner",
+  "Salamander", "Seahorse", "Serval", "Skunk", "Sloth", "Snow Leopard", "Snowy Owl", "Sparrowhawk", "Squid",
+  "Squirrel", "Stingray", "Stoat", "Sun Bear", "Tapir", "Tasmanian Devil", "Toucan", "Tuna", "Turkey",
+  "Turtle", "Uakari", "Uguisu", "Umbrellabird", "Vampire Bat", "Vicuna", "Viper", "Wallaby", "Walrus",
+  "Warthog", "Weasel", "Wolf", "Wolverine", "Wombat", "Woodpecker", "Yak", "Zebra", "Zebu", "Zorilla",
+  "Blue Jay", "Bull Shark", "Catfish", "Chinstrap Penguin", "Clown Fish", "Coconut Crab", "Colobus",
+  "Dhole", "Diamondback", "Dragonfly", "Dung Beetle", "Electric Eel", "Fiddler Crab", "Fire Ant",
+  "Flying Fox", "Fossa", "Frilled Lizard", "Giant Otter", "Gila Monster", "Glass Frog", "Golden Eagle",
+  "Goliath Beetle", "Grizzly Bear", "Harp Seal", "Harpy Eagle", "Horseshoe Crab", "Hummingbird",
+  "King Cobra", "Kinkajou", "Liger", "Long-Tailed Tit", "Macaw", "Manta Ray", "Margay", "Markhor",
+  "Moon Bear", "Mudskipper", "Musk Ox", "Naked Mole Rat", "Night Heron", "Nile Crocodile", "Nilgai",
+  "Oarfish", "Olm", "Onager", "Orinoco Crocodile", "Painted Dog", "Patas Monkey", "Patagonian Mara",
+  "Proboscis Monkey", "Pronghorn", "Pygmy Hippo", "Quetzal", "Rainbow Lorikeet", "Red Kite", "Roughy",
+  "Ruffed Lemur", "Rusty Spotted Cat", "Sand Cat", "Saola", "Scarlet Macaw", "Secretary Bird", "Shoebill",
 ];
 
 // Pick a random animal not already used by another user
