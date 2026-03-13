@@ -9,14 +9,22 @@ const User = require("./models/User");
 const app = express();
 
 // ── Middleware ────────────────────────────────────────────────────────────────
-const cors = require("cors");
-
 app.use(cors({
-  origin: "*",
+  origin: function (origin, callback) {
+    const allowed = [
+      process.env.FRONTEND_URL
+      
+    ].filter(Boolean);
+    if (!origin || allowed.some(u => origin.startsWith(u.replace(/\/$/, '')))) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
 }));
-
 app.use(express.json());
+
 // ── Connect to MongoDB ────────────────────────────────────────────────────────
 mongoose
   .connect(process.env.MONGO_URI)
